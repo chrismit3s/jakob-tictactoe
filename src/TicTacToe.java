@@ -13,6 +13,13 @@ public class TicTacToe {
         game.gameloop(game);
     }
 
+    public TicTacToe() {
+        for (int i = 0; i < 9; i++) {
+            xPos.add(-1);
+            oPos.add(-1);
+        }
+    }
+
     private void init() {
         System.out.println("Welcome to this console-version of TicTacToe!");
         System.out.println("Player One will be 'X' and Player Two will be 'O'.");
@@ -37,6 +44,7 @@ public class TicTacToe {
                 //throw new Exception("You tried to place a mark in an already marked sector!");
             }
             game.placeMark(input, counter);
+            counter++;
         }
         if (game.checkVictory()[1]) {
             System.out.println("Player One won!!!");
@@ -95,9 +103,9 @@ public class TicTacToe {
 
     private void placeMark(int input, int counter) {
         if (counter % 2 == 0) {
-            xPos.add(input);
+            xPos.set(input, input);
         } else {
-            oPos.add(input);
+            oPos.set(input, input);
         }
     }
 
@@ -113,7 +121,7 @@ public class TicTacToe {
             } else if (oPos.get(sectorCounter) == sectorCounter) {
                 result = result + O + " ";
             } else {
-                result = result + " ";
+                result = result + "  ";
             }
 
             if (sectorCounter == 8) {
