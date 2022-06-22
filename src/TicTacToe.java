@@ -9,8 +9,10 @@ public class TicTacToe {
 
     public static void main(String[] args) {
         TicTacToe game = new TicTacToe();
+        Player cp1 = new ConsolePlayer(1);
+        Player cp2 = new ConsolePlayer(2);
         game.init();
-        game.gameloop(game);
+        game.gameloop(game, cp1, cp2);
     }
 
     public TicTacToe() {
@@ -23,29 +25,22 @@ public class TicTacToe {
     private void init() {
         System.out.println("Welcome to this console-version of TicTacToe!");
         System.out.println("Player One will be 'X' and Player Two will be 'O'.");
-        System.out.println("Player One will now start.\n ----------------------------------------------------");
+        System.out.println("----------------------------------------------------");
     }
 
-    private void gameloop(TicTacToe game) {
+    private void gameloop(TicTacToe game, Player cp1, Player cp2) {
         while (!game.checkVictory()[0]) {
-            if (counter % 2 == 0) {
-                System.out.println("Player One's turn:");
-            } else {
-                System.out.println("Player Two's turn:");
-            }
-
             System.out.println(game.toString());
-            System.out.println("\nSelect a Sector between 0 and 8 to place your mark: ");
-            String s = System.console().readLine();
-            Integer input = Integer.parseInt(s);
-            if (input < 0 || input > 8) {
-                //throw new Exception("Your input(" + input + ") was faulty and did not match any of the sectors!");
-            } else if (xPos.indexOf(input) != -1 || oPos.indexOf(input) != -1) {
-                //throw new Exception("You tried to place a mark in an already marked sector!");
+            if (counter % 2 == 0) {
+                Move move = cp1.makeMove(game);
+                game.placeMark(move);
+            } else {
+                Move move = cp2.makeMove(game);
+                game.placeMark(move);
             }
-            game.placeMark(input, counter);
             counter++;
         }
+
         if (game.checkVictory()[1]) {
             System.out.println("Player One won!!!");
             System.out.println("\n" + game.toString());
@@ -101,11 +96,11 @@ public class TicTacToe {
         return false;
     }
 
-    private void placeMark(int input, int counter) {
-        if (counter % 2 == 0) {
-            xPos.set(input, input);
+    private void placeMark(Move move) {
+        if (move.getMark() == "X") {
+            xPos.set(move.getSector(), move.getSector());
         } else {
-            oPos.set(input, input);
+            oPos.set(move.getSector(), move.getSector());
         }
     }
 
@@ -133,5 +128,29 @@ public class TicTacToe {
             }
         }
         return result;
+    }
+
+    public ArrayList<Integer> getXPos() {
+        return this.xPos;
+    }
+
+    public void setXPos(ArrayList<Integer> xPos) {
+        this.xPos = xPos;
+    }
+
+    public ArrayList<Integer> getOPos() {
+        return this.oPos;
+    }
+
+    public void setOPos(ArrayList<Integer> oPos) {
+        this.oPos = oPos;
+    }
+
+    public int getCounter() {
+        return this.counter;
+    }
+
+    public void setCounter(int counter) {
+        this.counter = counter;
     }
 }
