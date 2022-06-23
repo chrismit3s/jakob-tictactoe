@@ -9,10 +9,10 @@ public class TicTacToe {
 
     public static void main(String[] args) {
         TicTacToe game = new TicTacToe();
-        Player cp1 = new ConsolePlayer(1);
-        Player cp2 = new ConsolePlayer(2);
+        Player cp1 = new ConsolePlayer('X');
+        Player cp2 = new ConsolePlayer('O');
         game.init();
-        game.gameloop(game, cp1, cp2);
+        game.gameloop(cp1, cp2);
     }
 
     public TicTacToe() {
@@ -28,26 +28,36 @@ public class TicTacToe {
         System.out.println("----------------------------------------------------");
     }
 
-    private void gameloop(TicTacToe game, Player cp1, Player cp2) {
-        while (!game.checkVictory()[0]) {
-            System.out.println(game.toString());
+    private void gameloop(Player cp1, Player cp2) {
+        while (!this.checkVictory()[0]) {
+            System.out.println(this.toString());
             if (counter % 2 == 0) {
-                Move move = cp1.makeMove(game);
-                game.placeMark(move);
+                Move move = cp1.makeMove(this);
+                this.placeMark(move);
             } else {
-                Move move = cp2.makeMove(game);
-                game.placeMark(move);
+                Move move = cp2.makeMove(this);
+                this.placeMark(move);
             }
             counter++;
         }
 
-        if (game.checkVictory()[1]) {
-            System.out.println("Player One won!!!");
-            System.out.println("\n" + game.toString());
+        if (this.checkVictory()[1]) {
+            System.out.println("Player X won!!!");
+            System.out.println("\n" + this.toString());
         } else {
-            System.out.println("Player Two won!!!");
-            System.out.println("\n" + game.toString());
+            System.out.println("Player O won!!!");
+            System.out.println("\n" + this.toString());
         }
+    }
+
+    public boolean checkMoveViability(int input) {
+        // Checking for faulty inputs(input /e [0, 8] or already taken).
+        if (input < 0 || input > 8) {
+            return false;
+        } else if (xPos.indexOf(input) != -1 || oPos.indexOf(input) != -1) {
+            return false;
+        }
+        return true;
     }
 
     private boolean[] checkVictory() {
@@ -97,7 +107,7 @@ public class TicTacToe {
     }
 
     private void placeMark(Move move) {
-        if (move.getMark() == "X") {
+        if (move.getMark() == 'X') {
             xPos.set(move.getSector(), move.getSector());
         } else {
             oPos.set(move.getSector(), move.getSector());

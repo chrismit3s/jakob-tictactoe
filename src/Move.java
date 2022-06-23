@@ -1,17 +1,17 @@
 public class Move {
-    private String mark = "";
+    private char mark = ' ';
     private int sector;
     
-    public Move(String mark, int sector) {
+    public Move(char mark, int sector) {
         this.mark = mark;
         this.sector = sector;
     }
 
-    public String getMark() {
+    public char getMark() {
         return this.mark;
     }
 
-    public void setMark(String mark) {
+    public void setMark(char mark) {
         this.mark = mark;
     }
 
