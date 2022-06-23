@@ -6,6 +6,8 @@ public class TicTacToe {
     private final String X = "X";
     private final String O = "O";
     private int counter = 0;
+    private int tryCounter = 0;
+    private final int MAX_TRIES = 5;
 
     public static void main(String[] args) {
         TicTacToe game = new TicTacToe();
@@ -33,21 +35,42 @@ public class TicTacToe {
             System.out.println(this.toString());
             if (counter % 2 == 0) {
                 Move move = cp1.makeMove(this);
+                // Checking internally if the inputted move is viable or not.
+                while (!this.checkMoveViability(move.getSector())) {
+                    move = this.handleTries(cp1);
+                }
                 this.placeMark(move);
             } else {
                 Move move = cp2.makeMove(this);
+                // Checking internally if the inputted move is viable or not.
+                while (!this.checkMoveViability(move.getSector())) {
+                    move = this.handleTries(cp2);
+                }
                 this.placeMark(move);
             }
             counter++;
         }
 
         if (this.checkVictory()[1]) {
-            System.out.println("Player X won!!!");
+            System.out.println("Player X won in " + counter + "rounds!!!");
             System.out.println("\n" + this.toString());
         } else {
-            System.out.println("Player O won!!!");
+            System.out.println("Player O won in " + counter + "rounds!!!");
             System.out.println("\n" + this.toString());
         }
+    }
+
+    private Move handleTries(Player player) {
+        // Giving the Player another chance to make a correct input if a faulty one has been inputted. Max 5 tries.
+        if (tryCounter != MAX_TRIES) {
+            System.out.println("You either made a faulty input or the sector you're\ntrying to mark has already been marked. Please try again!");
+            tryCounter++;
+            return player.makeMove(this);
+        } else {
+            System.out.println("Are you square brain? Just start a new game...");
+            System.exit(0);
+        }
+        return null;
     }
 
     public boolean checkMoveViability(int input) {
@@ -107,10 +130,15 @@ public class TicTacToe {
     }
 
     private void placeMark(Move move) {
-        if (move.getMark() == 'X') {
-            xPos.set(move.getSector(), move.getSector());
+        if (this.checkMoveViability(move.getSector())) {
+            if (move.getMark() == 'X') {
+                xPos.set(move.getSector(), move.getSector());
+            } else {
+                oPos.set(move.getSector(), move.getSector());
+            }
         } else {
-            oPos.set(move.getSector(), move.getSector());
+            System.out.println("An error has occured! The move you wanted to make is not possible. Exiting now...");
+            System.exit(0);
         }
     }
 
