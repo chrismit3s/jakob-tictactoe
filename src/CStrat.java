@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Random;
 import java.lang.IllegalStateException;
 
-class Bits {
+class Board {
     private static final int THREE = 3;
     private static final int EMPTY = 0, MASK = 3;
     public static final int X = 1, DRAW = 2, O = 3;
@@ -16,23 +16,23 @@ class Bits {
     private int field = 0;
 
 
-    public Bits() {}
+    public Board() {}
 
-    public Bits(TicTacToe game) {
+    public Board(TicTacToe game) {
         for (int x : game.getXPos()) {
-            this.field |= Bits.X << (2 * x);
+            this.field |= Board.X << (2 * x);
         }
         for (int o : game.getOPos()) {
-            this.field |= Bits.O << (2 * o);
+            this.field |= Board.O << (2 * o);
         }
     }
 
-    public static Bits random() {
-        Bits b = new Bits();
+    public static Board random() {
+        Board b = new Board();
         Random rng = new Random();
-        for (int row = 0; row < Bits.THREE; row++) {
-            for (int col = 0; col < Bits.THREE; col++) {
-                b.set(row, col, Bits.randomMark(rng));
+        for (int row = 0; row < Board.THREE; row++) {
+            for (int col = 0; col < Board.THREE; col++) {
+                b.set(row, col, Board.randomMark(rng));
             }
         }
         return b;
@@ -41,9 +41,9 @@ class Bits {
     private static int randomMark(Random rng) {
         int i = rng.nextInt() & Integer.MAX_VALUE;
         switch (i % 3) {
-            case 0: return Bits.EMPTY;
-            case 1: return Bits.X;
-            case 2: return Bits.O;
+            case 0: return Board.EMPTY;
+            case 1: return Board.X;
+            case 2: return Board.O;
         }
         throw new IllegalStateException("unreachable");
     }
@@ -55,42 +55,42 @@ class Bits {
 
     public static char symbol(int mark) {
         switch (mark) {
-            case Bits.X:     return 'X';
-            case Bits.O:     return 'O';
-            case Bits.EMPTY: return ' ';
+            case Board.X:     return 'X';
+            case Board.O:     return 'O';
+            case Board.EMPTY: return ' ';
             default:         return '!';
         }
     }
 
     public static void precompute() {
-        if (!Bits.didPrecompute) {
-            Bits.didPrecompute = true;
-            new Bits().minimax(false);
-            new Bits().minimax(true);
+        if (!Board.didPrecompute) {
+            Board.didPrecompute = true;
+            new Board().minimax(false);
+            new Board().minimax(true);
         }
     }
 
     public static void clear() {
-        Bits.didPrecompute = false;
-        Bits.minimaxLookup.clear();
+        Board.didPrecompute = false;
+        Board.minimaxLookup.clear();
     }
 
 
     public void set(int pos, int mark) {
-        this.field &= ~(Bits.MASK << (2 * pos));
+        this.field &= ~(Board.MASK << (2 * pos));
         this.field |= mark << (2 * pos);
     }
 
     public void set(int row, int col, int mark) {
-        this.set(row * Bits.THREE + col, mark);
+        this.set(row * Board.THREE + col, mark);
     }
 
     public int get(int pos) {
-        return (int)((this.field >> (2 * pos)) & Bits.MASK);
+        return (int)((this.field >> (2 * pos)) & Board.MASK);
     }
 
     public int get(int row, int col) {
-        return this.get(row * Bits.THREE + col);
+        return this.get(row * Board.THREE + col);
     }
 
     public int checkWin() {
@@ -110,7 +110,7 @@ class Bits {
         //
         // 0 +4
 
-        for (int i = 0; i < Bits.THREE; i++) {
+        for (int i = 0; i < Board.THREE; i++) {
             int markRow = this.get(i, 0);
             if (markRow == this.get(i, 1) && markRow == this.get(i, 2)) {
                 return markRow;
@@ -133,22 +133,22 @@ class Bits {
         }
 
         int field = this.field;
-        for (int i = 0; i < Bits.THREE * Bits.THREE; i++) {
-            if ((field & Bits.MASK) == Bits.EMPTY) {
-                return Bits.EMPTY;
+        for (int i = 0; i < Board.THREE * Board.THREE; i++) {
+            if ((field & Board.MASK) == Board.EMPTY) {
+                return Board.EMPTY;
             }
             field >>= 2;
         }
 
-        return Bits.DRAW;
+        return Board.DRAW;
     }
 
     public List<Integer> bestMoves(boolean isX) {
         List<Integer> moves = new ArrayList<>(9);
         int bestRet = this.minimax(isX);
-        int mark = isX ? Bits.X : Bits.O;
-        for (int i = 0; i < Bits.THREE * Bits.THREE; i++) {
-            if (this.get(i) != Bits.EMPTY) {
+        int mark = isX ? Board.X : Board.O;
+        for (int i = 0; i < Board.THREE * Board.THREE; i++) {
+            if (this.get(i) != Board.EMPTY) {
                 continue;
             }
 
@@ -157,7 +157,7 @@ class Bits {
             if (ret == bestRet) {
                 moves.add(i);
             }
-            this.set(i, Bits.EMPTY);
+            this.set(i, Board.EMPTY);
         }
 
         return moves;
@@ -165,30 +165,30 @@ class Bits {
 
     public int minimax(boolean isX) {
         int key = (this.field << 1) | (isX ? 1 : 0);
-        Integer minimax = Bits.minimaxLookup.get(key);
+        Integer minimax = Board.minimaxLookup.get(key);
         if (minimax == null) {
             minimax = this.minimaxRec(isX);
-            Bits.minimaxLookup.put(key, minimax);
+            Board.minimaxLookup.put(key, minimax);
         }
         return minimax;
     }
 
     private int minimaxRec(boolean isX) {
         int winner = this.checkWin();
-        if (winner != Bits.EMPTY) {
+        if (winner != Board.EMPTY) {
             return winner;
         }
 
-        int mark = isX ? Bits.X : Bits.O;
-        int best = isX ? Bits.O : Bits.X;
-        for (int i = 0; i < Bits.THREE * Bits.THREE; i++) {
-            if (this.get(i) != Bits.EMPTY) {
+        int mark = isX ? Board.X : Board.O;
+        int best = isX ? Board.O : Board.X;
+        for (int i = 0; i < Board.THREE * Board.THREE; i++) {
+            if (this.get(i) != Board.EMPTY) {
                 continue;
             }
 
             this.set(i, mark);
-            best = Bits.better(isX, this.minimax(!isX), best);
-            this.set(i, Bits.EMPTY);
+            best = Board.better(isX, this.minimax(!isX), best);
+            this.set(i, Board.EMPTY);
         }
 
         return best;
@@ -196,20 +196,20 @@ class Bits {
 
     public int minimaxUncached(boolean isX) {
         int winner = this.checkWin();
-        if (winner != Bits.EMPTY) {
+        if (winner != Board.EMPTY) {
             return winner;
         }
 
-        int mark = isX ? Bits.X : Bits.O;
-        int best = isX ? Bits.O : Bits.X;
-        for (int i = 0; i < Bits.THREE * Bits.THREE; i++) {
-            if (this.get(i) != Bits.EMPTY) {
+        int mark = isX ? Board.X : Board.O;
+        int best = isX ? Board.O : Board.X;
+        for (int i = 0; i < Board.THREE * Board.THREE; i++) {
+            if (this.get(i) != Board.EMPTY) {
                 continue;
             }
 
             this.set(i, mark);
-            best = Bits.better(isX, this.minimaxUncached(!isX), best);
-            this.set(i, Bits.EMPTY);
+            best = Board.better(isX, this.minimaxUncached(!isX), best);
+            this.set(i, Board.EMPTY);
         }
 
         return best;
@@ -218,12 +218,12 @@ class Bits {
     public String toString() {
         String s = "";
 
-        for (int row = 0; row < Bits.THREE; row++) {
-            for (int col = 0; col < Bits.THREE; col++) {
-                s += Bits.symbol(this.get(row, col));
-                s += col + 1 == Bits.THREE ? "\n" : " \u2502 ";
+        for (int row = 0; row < Board.THREE; row++) {
+            for (int col = 0; col < Board.THREE; col++) {
+                s += Board.symbol(this.get(row, col));
+                s += col + 1 == Board.THREE ? "\n" : " \u2502 ";
             }
-            s += row + 1 == Bits.THREE ? "" : "\u2500\u2500\u253C\u2500\u2500\u2500\u253C\u2500\u2500\n";
+            s += row + 1 == Board.THREE ? "" : "\u2500\u2500\u253C\u2500\u2500\u2500\u253C\u2500\u2500\n";
         }
 
         return s;
@@ -237,12 +237,12 @@ public class CStrat implements Player {
     public CStrat(char mark) {
         this.mark = mark;
         System.out.println("[CStrat] Starting precompute...");
-        Bits.precompute();
+        Board.precompute();
         System.out.println("[CStrat] done");
     }
 
     public Move makeMove(TicTacToe game) {
-        List<Integer> moves = new Bits(game).bestMoves(this.mark == 'X');
+        List<Integer> moves = new Board(game).bestMoves(this.mark == 'X');
         int i = (this.rng.nextInt() & Integer.MAX_VALUE) % moves.size();
         return new Move(this.mark, moves.get(i));
     }
@@ -252,9 +252,9 @@ public class CStrat implements Player {
 
         // generate data
         final int N = 100000;
-        Bits[] boards = new Bits[N];
+        Board[] boards = new Board[N];
         for (int i = 0; i < N; i++) {
-            boards[i] = Bits.random();
+            boards[i] = Board.random();
         }
 
         long start, elapsed;
@@ -268,7 +268,7 @@ public class CStrat implements Player {
         System.out.println("checkWin: " + elapsed + " ms");
 
         // test minimaxUncached
-        Bits.clear();
+        Board.clear();
         start = System.currentTimeMillis();
         for (int i = 0; i < N; i++) {
             boards[i].minimaxUncached(true);
@@ -278,7 +278,7 @@ public class CStrat implements Player {
         System.out.println("minimaxUncached: " + elapsed + " ms");
 
         // test minimax
-        Bits.clear();
+        Board.clear();
         start = System.currentTimeMillis();
         for (int i = 0; i < N; i++) {
             boards[i].minimax(true);
@@ -288,7 +288,7 @@ public class CStrat implements Player {
         System.out.println("minimax: " + elapsed + " ms");
 
         // test minimax
-        Bits.precompute();
+        Board.precompute();
         start = System.currentTimeMillis();
         for (int i = 0; i < N; i++) {
             boards[i].minimax(true);
