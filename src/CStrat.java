@@ -3,6 +3,7 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.lang.IllegalStateException;
 
 class Bits {
     private static final int THREE = 3;
@@ -10,7 +11,6 @@ class Bits {
     public static final int X = 1, DRAW = 2, O = 3;
 
     private static boolean didPrecompute = false;
-    private static final Map<Integer, Integer> winLookup = new HashMap<>();
     private static final Map<Integer, Integer> minimaxLookup = new HashMap<>();
 
     private int field = 0;
@@ -25,6 +25,27 @@ class Bits {
         for (int o : game.getOPos()) {
             this.field |= Bits.O << (2 * o);
         }
+    }
+
+    public static Bits random() {
+        Bits b = new Bits();
+        Random rng = new Random();
+        for (int row = 0; row < Bits.THREE; row++) {
+            for (int col = 0; col < Bits.THREE; col++) {
+                b.set(row, col, Bits.randomMark(rng));
+            }
+        }
+        return b;
+    }
+
+    private static int randomMark(Random rng) {
+        int i = rng.nextInt() & Integer.MAX_VALUE;
+        switch (i % 3) {
+            case 0: return Bits.EMPTY;
+            case 1: return Bits.X;
+            case 2: return Bits.O;
+        }
+        throw new IllegalStateException("unreachable");
     }
 
 
@@ -49,6 +70,11 @@ class Bits {
         }
     }
 
+    public static void clear() {
+        Bits.didPrecompute = false;
+        Bits.minimaxLookup.clear();
+    }
+
 
     public void set(int pos, int mark) {
         this.field &= ~(Bits.MASK << (2 * pos));
@@ -68,15 +94,22 @@ class Bits {
     }
 
     public int checkWin() {
-        Integer win = Bits.winLookup.get(this.field);
-        if (win == null) {
-            win = this.checkWin_();
-            Bits.winLookup.put(this.field, win);
-        }
-        return win;
-    }
+        // 0 1 2
+        // 3 4 5
+        // 6 7 8
+        //
+        // 0 +1
+        // 3 +1
+        // 6 +1
+        //
+        // 2 +2
+        //
+        // 0 +3
+        // 1 +3
+        // 2 +3
+        //
+        // 0 +4
 
-    private int checkWin_() {
         for (int i = 0; i < Bits.THREE; i++) {
             int markRow = this.get(i, 0);
             if (markRow == this.get(i, 1) && markRow == this.get(i, 2)) {
@@ -134,13 +167,13 @@ class Bits {
         int key = (this.field << 1) | (isX ? 1 : 0);
         Integer minimax = Bits.minimaxLookup.get(key);
         if (minimax == null) {
-            minimax = this.minimax_(isX);
+            minimax = this.minimaxRec(isX);
             Bits.minimaxLookup.put(key, minimax);
         }
         return minimax;
     }
 
-    private int minimax_(boolean isX) {
+    private int minimaxRec(boolean isX) {
         int winner = this.checkWin();
         if (winner != Bits.EMPTY) {
             return winner;
@@ -155,6 +188,27 @@ class Bits {
 
             this.set(i, mark);
             best = Bits.better(isX, this.minimax(!isX), best);
+            this.set(i, Bits.EMPTY);
+        }
+
+        return best;
+    }
+
+    public int minimaxUncached(boolean isX) {
+        int winner = this.checkWin();
+        if (winner != Bits.EMPTY) {
+            return winner;
+        }
+
+        int mark = isX ? Bits.X : Bits.O;
+        int best = isX ? Bits.O : Bits.X;
+        for (int i = 0; i < Bits.THREE * Bits.THREE; i++) {
+            if (this.get(i) != Bits.EMPTY) {
+                continue;
+            }
+
+            this.set(i, mark);
+            best = Bits.better(isX, this.minimaxUncached(!isX), best);
             this.set(i, Bits.EMPTY);
         }
 
@@ -195,16 +249,53 @@ public class CStrat implements Player {
 
     public static void main(String[] args) {
         // javac -Xdiags:verbose -d build src/* && java -cp build CStrat
-        Bits b = new Bits();
-        b.set(1, 1, Bits.X);
-        System.out.println(b);
-        List<Integer> moves = b.bestMoves(false);
-        System.out.print("[ ");
-        for (int m : moves) {
-            System.out.print(m);
-            System.out.print(" ");
+
+        // generate data
+        final int N = 100000;
+        Bits[] boards = new Bits[N];
+        for (int i = 0; i < N; i++) {
+            boards[i] = Bits.random();
         }
-        System.out.println("]");
+
+        long start, elapsed;
+
+        // test checkWin
+        start = System.currentTimeMillis();
+        for (int i = 0; i < N; i++) {
+            boards[i].checkWin();
+        }
+        elapsed = System.currentTimeMillis() - start;
+        System.out.println("checkWin: " + elapsed + " ms");
+
+        // test minimaxUncached
+        Bits.clear();
+        start = System.currentTimeMillis();
+        for (int i = 0; i < N; i++) {
+            boards[i].minimaxUncached(true);
+            boards[i].minimaxUncached(false);
+        }
+        elapsed = System.currentTimeMillis() - start;
+        System.out.println("minimaxUncached: " + elapsed + " ms");
+
+        // test minimax
+        Bits.clear();
+        start = System.currentTimeMillis();
+        for (int i = 0; i < N; i++) {
+            boards[i].minimax(true);
+            boards[i].minimax(false);
+        }
+        elapsed = System.currentTimeMillis() - start;
+        System.out.println("minimax: " + elapsed + " ms");
+
+        // test minimax
+        Bits.precompute();
+        start = System.currentTimeMillis();
+        for (int i = 0; i < N; i++) {
+            boards[i].minimax(true);
+            boards[i].minimax(false);
+        }
+        elapsed = System.currentTimeMillis() - start;
+        System.out.println("minimax (precomputed): " + elapsed + " ms");
     }
 }
 
